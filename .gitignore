@@ -1,0 +1,94 @@
+# SECRETS - NEVER UPLOAD THESE TO GITHUB
+.env
+.env.local
+.env.production
+.env.development
+*.key
+*.pem
+*.p12
+secrets/
+
+# PYTHON
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+
+# NODE / JAVASCRIPT
+node_modules/
+mobile/dist/
+mobile/.vite/
+mobile/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+
+# DOCKER
+# Keep docker-compose.yml but ignore override files
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# DATABASE & STORAGE
+*.db
+*.sqlite
+*.sqlite3
+/tmp/receipts/
+uploads/
+
+# OPERATING SYSTEM FILES
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+
+# VS CODE
+.vscode/settings.json
+.vscode/launch.json
+# Keep .vscode/extensions.json if you want (it's not sensitive)
+
+# LOGS
+*.log
+logs/
+*.log.*
+
+# ML MODEL FILES (large binary files)
+*.tflite
+*.h5
+*.pkl
+assets/categorizer.tflite
+assets/vocab.json
+assets/labels.json
+
+# CERTIFICATES & ANDROID SIGNING
+*.jks
+*.keystore
+release/
+android/app/release/
+
+# MISC
+*.bak
+*.swp
+*.swo
+.coverage
+htmlcov/
+.tox/

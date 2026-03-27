@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>SpendWise — Expense Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#060612;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:16px;overflow:hidden}
+:root{
+  --bg:#0A0A18;--surface:#13132A;--surfaceAlt:#1A1A35;--border:#252548;
+  --text:#EEEEFF;--textSub:#8080AA;--textMuted:#4A4A72;
+  --primary:#7C6DFA;--primaryLight:#1E1B4B;--primaryGlow:rgba(124,109,250,0.3);
+  --success:#22D3A0;--warning:#FBBF24;--danger:#F87171;
+  --amber:#FCD34D;--teal:#2DD4BF;--pink:#F472B6;
+  --shadow:rgba(0,0,0,0.6);
+}
+.phone-shell{
+  width:390px;height:844px;background:var(--surface);border-radius:50px;
+  overflow:hidden;position:relative;display:flex;flex-direction:column;
+  box-shadow:0 0 0 10px #0D0D20,0 0 0 11px #252548,0 60px 120px rgba(0,0,0,0.9),inset 0 1px 0 rgba(255,255,255,0.05);
+}
+/* Status bar */
+.status{background:var(--bg);display:flex;justify-content:space-between;align-items:center;padding:14px 28px 8px;font-size:12px;font-weight:600;color:var(--textSub);flex-shrink:0}
+.status-right{display:flex;gap:6px;align-items:center}
+/* Header */
+.header{padding:10px 20px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border)}
+.header-brand{font-size:20px;font-weight:700;background:linear-gradient(135deg,#7C6DFA,#C084FC);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.5px}
+.header-actions{display:flex;gap:10px;align-items:center}
+.sync-dot{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--success);font-weight:500}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 2s ease infinite}
+.icon-btn{width:36px;height:36px;border-radius:12px;background:var(--surfaceAlt);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--textSub);transition:all 0.2s;position:relative}
+.icon-btn:hover{background:var(--primaryLight);color:var(--primary);border-color:var(--primary)}
+.badge{position:absolute;top:-3px;right:-3px;width:14px;height:14px;background:var(--danger);border-radius:50%;border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white}
+/* Main content */
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:none;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+.screen.active{display:block;animation:slideUp 0.25s cubic-bezier(.22,.68,0,1)}
+/* Bottom nav */
+.bottom-nav{background:var(--bg);border-top:1px solid var(--border);display:flex;padding:10px 0 24px;flex-shrink:0}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;font-family:inherit;cursor:pointer;padding:6px 2px;transition:all 0.2s}
+.nav-icon{width:40px;height:36px;border-radius:14px;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.nav-tab.active .nav-icon{background:var(--primaryLight)}
+.nav-label{font-size:10px;font-weight:500;color:var(--textSub)}
+.nav-tab.active .nav-label{color:var(--primary)}
+/* Cards */
+.card{background:var(--surfaceAlt);border-radius:20px;padding:16px;border:1px solid var(--border)}
+.card-glass{background:rgba(124,109,250,0.08);border:1px solid rgba(124,109,250,0.2);border-radius:20px;padding:16px;backdrop-filter:blur(10px)}
+/* Typography */
+.section-title{font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--textSub);margin-bottom:10px}
+h2{font-size:20px;font-weight:700;color:var(--text)}
+h3{font-size:15px;font-weight:600;color:var(--text)}
+/* FAB */
+.fab{position:absolute;bottom:88px;right:20px;width:54px;height:54px;border-radius:18px;background:linear-gradient(135deg,#7C6DFA,#9F8CFC);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px var(--primaryGlow);transition:transform 0.15s,box-shadow 0.15s;z-index:50}
+.fab:hover{transform:scale(1.05);box-shadow:0 12px 32px var(--primaryGlow)}
+.fab:active{transform:scale(0.95)}
+/* Modal */
+.modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:100;display:none}
+.modal-backdrop.open{display:flex;align-items:flex-end}
+.modal-sheet{background:var(--surface);border-radius:28px 28px 0 0;width:100%;padding:0 0 32px;max-height:90%;overflow-y:auto;animation:slideUp 0.3s cubic-bezier(.22,.68,0,1)}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 16px}
+.modal-title{font-size:17px;font-weight:700}
+.modal-close{background:var(--surfaceAlt);border:none;border-radius:12px;padding:7px 10px;color:var(--textSub);cursor:pointer;font-size:14px}
+/* Pill tabs */
+.pill-tabs{display:flex;gap:8px;padding:0 20px 16px}
+.pill{padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:none;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;color:var(--textSub)}
+.pill.active{background:var(--primary);border-color:var(--primary);color:white;font-weight:600}
+/* Form elements */
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--textSub);display:block;margin-bottom:6px}
+.form-input{width:100%;background:var(--surfaceAlt);border:1px solid var(--border);border-radius:14px;padding:13px 16px;color:var(--text);font-family:inherit;font-size:15px;outline:none;transition:border-color 0.2s}
+.form-input:focus{border-color:var(--primary)}
+.form-input::placeholder{color:var(--textMuted)}
+.amount-row{display:flex;gap:10px}
+.currency-select{background:var(--surfaceAlt);border:1px solid var(--border);border-radius:14px;padding:13px 12px;color:var(--text);font-family:inherit;font-size:14px;outline:none;width:90px}
+.amount-input{flex:1;font-size:28px!important;font-weight:700;padding:10px 16px!important}
+/* Expense row */
+.exp-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surfaceAlt);border-radius:16px;border:1px solid var(--border);margin-bottom:8px;transition:transform 0.1s}
+.exp-row:active{transform:scale(0.98)}
+.cat-bubble{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.exp-info{flex:1;min-width:0}
+.exp-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exp-meta{font-size:11px;color:var(--textSub);margin-top:2px}
+.exp-amount{font-size:15px;font-weight:700;color:var(--danger)}
+/* Summary grid */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}
+.sum-card{background:var(--surfaceAlt);border-radius:20px;padding:16px;border:1px solid var(--border);position:relative;overflow:hidden}
+.sum-card::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:0.12}
+.sum-card.blue::before{background:#7C6DFA}
+.sum-card.green::before{background:#22D3A0}
+.sum-card.amber::before{background:#FBBF24}
+.sum-card.pink::before{background:#F472B6}
+.sum-icon{font-size:26px;margin-bottom:10px}
+.sum-val{font-size:19px;font-weight:700;color:var(--text)}
+.sum-label{font-size:11px;color:var(--textSub);margin-top:2px}
+/* Progress bar */
+.prog-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
+.prog-fill{height:100%;border-radius:3px;transition:width 0.6s cubic-bezier(.22,.68,0,1)}
+/* Category chips */
+.cat-chips{display:flex;flex-wrap:wrap;gap:8px}
+.cat-chip{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:none;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;color:var(--textSub)}
+.cat-chip.selected{font-weight:600}
+/* Settings row */
+.settings-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}
+.settings-row:last-child{border-bottom:none}
+/* Toggle */
+.toggle{width:44px;height:24px;border-radius:12px;position:relative;cursor:pointer;transition:background 0.2s;border:none;padding:0}
+.toggle.on{background:var(--primary)}
+.toggle.off{background:var(--border)}
+.toggle-thumb{width:18px;height:18px;background:white;border-radius:50%;position:absolute;top:3px;transition:left 0.2s}
+.toggle.on .toggle-thumb{left:23px}
+.toggle.off .toggle-thumb{left:3px}
+/* Color dots */
+.color-dots{display:flex;gap:10px}
+.color-dot{width:26px;height:26px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:border-color 0.2s}
+.color-dot.selected{border-color:white;box-shadow:0 0 0 2px var(--border)}
+/* Bar chart */
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:80px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar{width:100%;border-radius:6px 6px 0 0;transition:height 0.5s cubic-bezier(.22,.68,0,1);min-height:0}
+.bar-lbl{font-size:10px;color:var(--textSub)}
+.bar-val{font-size:9px;color:var(--primary);font-weight:600}
+/* Insight alert */
+.insight-box{border-radius:16px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.insight-box.warning{background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3)}
+.insight-box.success{background:rgba(34,211,160,0.1);border:1px solid rgba(34,211,160,0.2)}
+.insight-box.info{background:rgba(124,109,250,0.1);border:1px solid rgba(124,109,250,0.2)}
+.insight-icon{font-size:22px;flex-shrink:0;margin-top:2px}
+.insight-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.insight-body{font-size:12px;color:var(--textSub);line-height:1.5}
+/* Budget card */
+.budget-card{background:var(--surfaceAlt);border-radius:20px;padding:16px;border:1px solid var(--border);margin-bottom:12px}
+/* Recurring chip */
+.rec-chip{display:inline-flex;align-items:center;gap:5px;background:var(--primaryLight);color:var(--primary);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600}
+/* Notification item */
+.notif-item{display:flex;gap:12px;padding:14px;background:var(--surfaceAlt);border-radius:16px;margin-bottom:8px}
+/* ML suggestion */
+.ml-hint{background:rgba(124,109,250,0.1);border:1px solid rgba(124,109,250,0.3);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+/* Save button */
+.save-btn{width:100%;padding:16px;background:linear-gradient(135deg,#7C6DFA,#9F8CFC);color:white;border:none;border-radius:16px;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;transition:opacity 0.15s,transform 0.1s;margin-top:16px}
+.save-btn:active{transform:scale(0.98);opacity:0.9}
+.save-btn:disabled{opacity:0.4;cursor:not-allowed}
+/* Method btn */
+.method-btn{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1.5px solid var(--border);border-radius:14px;background:none;font-family:inherit;font-size:14px;cursor:pointer;width:100%;margin-bottom:8px;color:var(--text);transition:all 0.15s}
+.method-btn.active{border-color:var(--primary);background:var(--primaryLight);color:var(--primary);font-weight:600}
+/* Gamification */
+.streak-card{background:linear-gradient(135deg,rgba(124,109,250,0.2),rgba(192,132,252,0.15));border:1px solid rgba(124,109,250,0.3);border-radius:20px;padding:16px}
+.badge-row{display:flex;gap:10px;flex-wrap:wrap}
+.badge-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px;background:var(--surfaceAlt);border-radius:14px;border:1px solid var(--border);width:72px}
+.badge-emoji{font-size:26px}
+.badge-name{font-size:10px;color:var(--textSub);text-align:center}
+/* Scrollable tabs */
+.scroll-tabs{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none}
+.scroll-tabs::-webkit-scrollbar{display:none}
+/* Animations */
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes shimmer{from{background-position:-200px}to{background-position:calc(200px + 100%)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+
+<div class="phone-shell">
+  <!-- Status Bar -->
+  <div class="status">
+    <span>9:41</span>
+    <div class="status-right">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="4" width="3" height="8" rx="1"/><rect x="4" y="2" width="3" height="10" rx="1"/><rect x="8" y="0" width="3" height="12" rx="1" opacity="0.3"/></svg>
+      <svg width="15" height="12" viewBox="0 0 15 12" fill="currentColor"><path d="M7.5 2.5C9.8 2.5 11.8 3.5 13.2 5.1L14.5 3.8C12.7 1.8 10.2.5 7.5.5S2.3 1.8.5 3.8L1.8 5.1C3.2 3.5 5.2 2.5 7.5 2.5zm0 4c1.4 0 2.6.6 3.5 1.5L12.3 6C11 4.8 9.3 4 7.5 4S4 4.8 2.7 6L4 7.5C5 6.6 6.2 6 7.5 6zm0 4c.8 0 1.5-.3 2-.8L7.5 11.5 5.5 9.2c.5.5 1.2.8 2 .8z"/></svg>
+      <span style="font-size:13px;font-weight:600">100%</span>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3.5" stroke="currentColor" stroke-opacity="0.35"/><rect x="1.5" y="1.5" width="19" height="9" rx="2.5" fill="currentColor"/><path d="M23 4v4a2 2 0 000-4z" fill="currentColor" opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <span class="header-brand" id="headerTitle">💸 SpendWise</span>
+    <div class="header-actions">
+      <div class="sync-dot"><div class="dot"></div>Synced</div>
+      <div class="icon-btn" onclick="toggleModal('notifModal')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <div class="badge">3</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD SCREEN -->
+  <div class="screen active" id="screen-dashboard">
+    <div style="padding:16px">
+      <!-- Greeting + hero card -->
+      <div style="margin-bottom:16px">
+        <p style="color:var(--textSub);font-size:13px">Good morning,</p>
+        <h2 style="margin-bottom:12px">Alex 👋</h2>
+        <div class="card-glass" style="position:relative;overflow:hidden">
+          <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(124,109,250,0.4),transparent);pointer-events:none"></div>
+          <div style="font-size:12px;color:var(--textSub);margin-bottom:4px">Total spent this month</div>
+          <div style="font-size:36px;font-weight:700;color:var(--text);letter-spacing:-1px">$<span id="heroTotal">334.52</span></div>
+          <div style="display:flex;gap:16px;margin-top:12px">
+            <div><span style="font-size:11px;color:var(--textSub)">Budget</span><div style="font-size:14px;font-weight:600;color:var(--success)">$1,200.00</div></div>
+            <div><span style="font-size:11px;color:var(--textSub)">Remaining</span><div style="font-size:14px;font-weight:600;color:var(--text)">$865.48</div></div>
+            <div><span style="font-size:11px;color:var(--textSub)">Transactions</span><div style="font-size:14px;font-weight:600;color:var(--text)">8</div></div>
+          </div>
+          <div class="prog-bar" style="margin-top:12px">
+            <div class="prog-fill" style="width:27.9%;background:linear-gradient(90deg,#7C6DFA,#22D3A0)"></div>
+          </div>
+          <div style="font-size:11px;color:var(--textSub);margin-top:4px">27.9% of monthly budget used</div>
+        </div>
+      </div>
+
+      <!-- Summary grid -->
+      <div class="summary-grid" style="padding:0;margin-bottom:16px">
+        <div class="sum-card blue"><div class="sum-icon">📅</div><div class="sum-val">$334.52</div><div class="sum-label">This Month</div></div>
+        <div class="sum-card green"><div class="sum-icon">💰</div><div class="sum-val">$2,847</div><div class="sum-label">All Time</div></div>
+        <div class="sum-card amber"><div class="sum-icon">🔁</div><div class="sum-val">3 Due</div><div class="sum-label">Recurring</div></div>
+        <div class="sum-card pink"><div class="sum-icon">🏆</div><div class="sum-val">340 pts</div><div class="sum-label">7-day streak 🔥</div></div>
+      </div>
+
+      <!-- Budget overview -->
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="section-title" style="margin-bottom:0">Budgets</div>
+          <span style="font-size:12px;color:var(--primary);cursor:pointer" onclick="switchTab('budgets')">View all →</span>
+        </div>
+        <div class="card" style="padding:14px">
+          <div id="budgetList"></div>
+        </div>
+      </div>
+
+      <!-- Insight -->
+      <div class="insight-box warning">
+        <div class="insight-icon">⚠️</div>
+        <div><div class="insight-title" style="color:var(--warning)">Food spending up 28%</div><div class="insight-body">You've spent more on dining this month vs. last. Consider setting a tighter budget.</div></div>
+      </div>
+      <div class="insight-box success">
+        <div class="insight-icon">🎯</div>
+        <div><div class="insight-title" style="color:var(--success)">On track!</div><div class="insight-body">Your transportation spending is 23% below average. Keep it up!</div></div>
+      </div>
+
+      <!-- Recent expenses -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="section-title" style="margin-bottom:0">Recent</div>
+        <span style="font-size:12px;color:var(--primary);cursor:pointer" onclick="switchTab('expenses')">View all →</span>
+      </div>
+      <div id="recentList"></div>
+    </div>
+  </div>
+
+  <!-- EXPENSES SCREEN -->
+  <div class="screen" id="screen-expenses">
+    <div style="padding:16px">
+      <!-- Search + Filter -->
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <div style="flex:1;display:flex;align-items:center;gap:8px;background:var(--surfaceAlt);border:1px solid var(--border);border-radius:14px;padding:10px 14px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--textSub)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="form-input" id="expSearch" placeholder="Search expenses…" oninput="renderExpenses()" style="background:none;border:none;padding:0;font-size:14px"/>
+        </div>
+        <div class="icon-btn" id="filterBtn" onclick="toggleFilters()" style="width:44px;height:44px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        </div>
+      </div>
+      <!-- Category filter chips (scroll) -->
+      <div class="scroll-tabs" id="catFilter">
+        <button class="cat-chip selected" onclick="filterCat('')" data-cat="">All</button>
+        <button class="cat-chip" onclick="filterCat('Food & Dining')" data-cat="Food & Dining">🍽 Food</button>
+        <button class="cat-chip" onclick="filterCat('Groceries')" data-cat="Groceries">🛒 Groceries</button>
+        <button class="cat-chip" onclick="filterCat('Transportation')" data-cat="Transportation">🚗 Transport</button>
+        <button class="cat-chip" onclick="filterCat('Shopping')" data-cat="Shopping">🛍 Shopping</button>
+        <button class="cat-chip" onclick="filterCat('Healthcare')" data-cat="Healthcare">🏥 Health</button>
+        <button class="cat-chip" onclick="filterCat('Entertainment')" data-cat="Entertainment">🎬 Fun</button>
+        <button class="cat-chip" onclick="filterCat('Subscriptions')" data-cat="Subscriptions">📱 Subs</button>
+      </div>
+      <div id="expenseList"></div>
+    </div>
+  </div>
+
+  <!-- BUDGETS SCREEN -->
+  <div class="screen" id="screen-budgets">
+    <div style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2>Budgets</h2>
+        <button onclick="alert('New budget form (connects to /api/v1/budgets)')" style="background:var(--primary);color:white;border:none;border-radius:12px;padding:8px 16px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">+ New</button>
+      </div>
+      <div id="budgetsFullList"></div>
+      <!-- Recurring section -->
+      <div class="section-title" style="margin-top:20px">Upcoming Recurring</div>
+      <div id="recurringList"></div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS SCREEN -->
+  <div class="screen" id="screen-analytics">
+    <div style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2>Insights</h2>
+        <div style="display:flex;gap:8px">
+          <button onclick="setAnalyticsPeriod(1,this)" style="padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--textSub);font-family:inherit;font-size:12px;cursor:pointer">1M</button>
+          <button onclick="setAnalyticsPeriod(3,this)" style="padding:6px 12px;border-radius:20px;border:1px solid var(--primary);background:var(--primaryLight);color:var(--primary);font-family:inherit;font-size:12px;cursor:pointer;font-weight:600" id="defaultPeriodBtn">3M</button>
+          <button onclick="setAnalyticsPeriod(12,this)" style="padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--textSub);font-family:inherit;font-size:12px;cursor:pointer">1Y</button>
+        </div>
+      </div>
+
+      <!-- Bar chart: weekly -->
+      <div class="card" style="margin-bottom:16px">
+        <h3 style="margin-bottom:14px">Daily Spending (Last 7 Days)</h3>
+        <div class="bar-chart" id="barChart"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px">
+          <span style="font-size:11px;color:var(--textSub)">7 days ago</span>
+          <span style="font-size:11px;color:var(--textSub)">Today</span>
+        </div>
+      </div>
+
+      <!-- Donut chart: categories -->
+      <div class="card" style="margin-bottom:16px">
+        <h3 style="margin-bottom:14px">Category Breakdown</h3>
+        <div style="display:flex;gap:16px;align-items:center">
+          <div style="flex-shrink:0;position:relative">
+            <svg width="100" height="100" viewBox="0 0 36 36" style="transform:rotate(-90deg)" id="donutSvg"></svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <span style="font-size:10px;color:var(--textSub)">Total</span>
+              <span style="font-size:13px;font-weight:700">$334</span>
+            </div>
+          </div>
+          <div id="catLegend" style="flex:1;display:flex;flex-direction:column;gap:7px"></div>
+        </div>
+      </div>
+
+      <!-- Insights -->
+      <div class="section-title">Smart Insights</div>
+      <div class="insight-box info">
+        <div class="insight-icon">🤖</div>
+        <div><div class="insight-title" style="color:var(--primary)">Predictive Budget</div><div class="insight-body">Based on your patterns, you'll likely spend $420–$490 next month. Consider a $500 budget.</div></div>
+      </div>
+      <div class="insight-box warning">
+        <div class="insight-icon">📈</div>
+        <div><div class="insight-title" style="color:var(--warning)">Anomaly Detected</div><div class="insight-body">$89.99 Amazon purchase is 3× your average shopping expense this week.</div></div>
+      </div>
+
+      <!-- Top merchants -->
+      <div class="card" style="margin-bottom:16px">
+        <h3 style="margin-bottom:12px">Top Merchants</h3>
+        <div id="merchantList"></div>
+      </div>
+
+      <!-- Gamification -->
+      <div class="streak-card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div><h3>Your Streak 🔥</h3><p style="font-size:12px;color:var(--textSub);margin-top:2px">7 days logging in a row!</p></div>
+          <div style="font-size:32px;font-weight:800;color:var(--primary)">340</div>
+        </div>
+        <div style="font-size:11px;color:var(--textSub);margin-bottom:10px">EARNED BADGES</div>
+        <div class="badge-row">
+          <div class="badge-item"><div class="badge-emoji">🥇</div><div class="badge-name">First Log</div></div>
+          <div class="badge-item"><div class="badge-emoji">🔥</div><div class="badge-name">7-Day Streak</div></div>
+          <div class="badge-item"><div class="badge-emoji">💰</div><div class="badge-name">Under Budget</div></div>
+          <div class="badge-item" style="opacity:0.3"><div class="badge-emoji">🌟</div><div class="badge-name">30-Day Streak</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS SCREEN -->
+  <div class="screen" id="screen-settings">
+    <div style="padding:16px">
+      <!-- Profile -->
+      <div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+        <div style="width:54px;height:54px;border-radius:18px;background:linear-gradient(135deg,#7C6DFA,#C084FC);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">👤</div>
+        <div>
+          <div style="font-weight:700;font-size:16px">Alex Morgan</div>
+          <div style="font-size:12px;color:var(--textSub)">alex@example.com</div>
+          <div style="font-size:11px;color:var(--primary);margin-top:4px">Base: USD · UTC</div>
+        </div>
+      </div>
+
+      <!-- Appearance -->
+      <div class="section-title">Appearance</div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="settings-row">
+          <span style="font-size:14px">Theme</span>
+          <div style="display:flex;gap:8px">
+            <button onclick="setTheme('dark',this)" style="padding:6px 14px;border-radius:20px;border:1px solid var(--primary);background:var(--primaryLight);color:var(--primary);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">🌙 Dark</button>
+            <button onclick="setTheme('light',this)" style="padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--textSub);font-family:inherit;font-size:12px;cursor:pointer">☀️ Light</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <span style="font-size:14px">Color Scheme</span>
+          <div class="color-dots">
+            <div class="color-dot selected" style="background:#7C6DFA" onclick="selectColor(this,'#7C6DFA','#1E1B4B')"></div>
+            <div class="color-dot" style="background:#22D3A0" onclick="selectColor(this,'#22D3A0','#0D2E27')"></div>
+            <div class="color-dot" style="background:#F472B6" onclick="selectColor(this,'#F472B6','#2E0D1E')"></div>
+            <div class="color-dot" style="background:#FBBF24" onclick="selectColor(this,'#FBBF24','#2E2200')"></div>
+            <div class="color-dot" style="background:#38BDF8" onclick="selectColor(this,'#38BDF8','#0D1E2E')"></div>
+          </div>
+        </div>
+        <div class="settings-row" style="border-bottom:none">
+          <span style="font-size:14px">Font Size</span>
+          <div style="display:flex;gap:6px">
+            <button onclick="setFontSize(0.85,this)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--textSub);font-family:inherit;font-size:11px;cursor:pointer">A</button>
+            <button onclick="setFontSize(1,this)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--primary);background:var(--primaryLight);color:var(--primary);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">A</button>
+            <button onclick="setFontSize(1.15,this)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--textSub);font-family:inherit;font-size:17px;cursor:pointer">A</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Notifications</div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="settings-row"><span style="font-size:14px">Budget Alerts</span><button class="toggle on" onclick="toggleSwitch(this)"><div class="toggle-thumb"></div></button></div>
+        <div class="settings-row"><span style="font-size:14px">Daily Reminder</span><button class="toggle on" onclick="toggleSwitch(this)"><div class="toggle-thumb"></div></button></div>
+        <div class="settings-row"><span style="font-size:14px">Weekly Summary</span><button class="toggle off" onclick="toggleSwitch(this)"><div class="toggle-thumb"></div></button></div>
+        <div class="settings-row" style="border-bottom:none"><span style="font-size:14px">Recurring Due</span><button class="toggle on" onclick="toggleSwitch(this)"><div class="toggle-thumb"></div></button></div>
+      </div>
+
+      <div class="section-title">Privacy & Security</div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="settings-row"><span style="font-size:14px">Cloud Sync (AES-256)</span><button class="toggle on" onclick="toggleSwitch(this)"><div class="toggle-thumb"></div></button></div>
+        <div class="settings-row"><span style="font-size:14px">Local Encrypted Backup</span><span style="font-size:12px;color:var(--success)">✓ On</span></div>
+        <div class="settings-row" style="border-bottom:none"><span style="font-size:14px">GDPR Data Export</span><button onclick="alert('Exports all your data as JSON — GDPR Art. 20 compliant')" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer">Export →</button></div>
+      </div>
+
+      <div class="section-title">Data</div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="settings-row"><span style="font-size:14px">Export CSV</span><button onclick="alert('Downloads expense_export.csv')" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer">Download →</button></div>
+        <div class="settings-row" style="border-bottom:none"><span style="font-size:14px">Export PDF Report</span><button onclick="alert('Generates expense_report.pdf via ReportLab')" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer">Generate →</button></div>
+      </div>
+
+      <div style="text-align:center;padding-bottom:16px">
+        <div style="font-size:11px;color:var(--textMuted);margin-bottom:16px;line-height:1.6">
+          SpendWise v1.0.0 · No banking credentials stored<br/>
+          GDPR, DPDP & CCPA Compliant · AES-256 Encrypted<br/>
+          JWT Auth · TLS/HTTPS · Offline-First
+        </div>
+        <button onclick="alert('Anonymizes and deletes your account (GDPR Art. 17)')" style="color:var(--danger);background:none;border:1.5px solid var(--danger);border-radius:12px;padding:10px 24px;font-family:inherit;font-weight:600;cursor:pointer;font-size:14px">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <button class="nav-tab active" id="tab-dashboard" onclick="switchTab('dashboard')">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <span class="nav-label" style="color:var(--primary)">Home</span>
+    </button>
+    <button class="nav-tab" id="tab-expenses" onclick="switchTab('expenses')">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
+      <span class="nav-label">Expenses</span>
+    </button>
+    <button class="nav-tab" id="tab-budgets" onclick="switchTab('budgets')">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+      <span class="nav-label">Budgets</span>
+    </button>
+    <button class="nav-tab" id="tab-analytics" onclick="switchTab('analytics')">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      <span class="nav-label">Insights</span>
+    </button>
+    <button class="nav-tab" id="tab-settings" onclick="switchTab('settings')">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
+      <span class="nav-label">Settings</span>
+    </button>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" onclick="toggleModal('expenseModal')" aria-label="Add expense">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+
+  <!-- ADD EXPENSE MODAL -->
+  <div class="modal-backdrop" id="expenseModal" onclick="handleBackdropClick(event,'expenseModal')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <span class="modal-title">Add Expense</span>
+        <button class="modal-close" onclick="toggleModal('expenseModal')">✕ Close</button>
+      </div>
+      <div class="pill-tabs">
+        <button class="pill active" onclick="showModalTab('basic',this)">Basic</button>
+        <button class="pill" onclick="showModalTab('details',this)">Details</button>
+        <button class="pill" onclick="showModalTab('split',this)">Split</button>
+      </div>
+      <!-- Basic tab -->
+      <div id="modalTab-basic" style="padding:0 20px">
+        <div class="form-group">
+          <label class="form-label">Amount *</label>
+          <div class="amount-row">
+            <select class="currency-select">
+              <option>USD</option><option>EUR</option><option>GBP</option>
+              <option>JPY</option><option>CAD</option><option>AUD</option>
+              <option>INR</option><option>SGD</option>
+            </select>
+            <input class="form-input amount-input" type="number" placeholder="0.00" id="amtInput" inputmode="decimal" oninput="onAmountChange()"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Merchant / Store</label>
+          <input class="form-input" type="text" placeholder="e.g. Starbucks, Amazon…" id="merchantInput" oninput="runEdgeML()"/>
+        </div>
+        <!-- ML suggestion -->
+        <div class="ml-hint" id="mlHint" style="display:none">
+          <span style="font-size:20px">🤖</span>
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--primary);font-weight:700">AI SUGGESTION</div>
+            <div style="font-size:13px;font-weight:600" id="mlText">Food & Dining (87% confident)</div>
+          </div>
+          <button onclick="acceptML()" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">Use</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <div class="cat-chips" id="categoryCatalog"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" type="datetime-local" id="expDate"/>
+        </div>
+        <button class="save-btn" id="saveBtnBasic" onclick="saveExpense()" disabled>+ Add Expense</button>
+      </div>
+      <!-- Details tab -->
+      <div id="modalTab-details" style="padding:0 20px;display:none">
+        <div class="form-group">
+          <label class="form-label">Payment Method</label>
+          <button class="method-btn active" onclick="selectMethod(this)">💳 Credit Card</button>
+          <button class="method-btn" onclick="selectMethod(this)">🏦 Debit Card</button>
+          <button class="method-btn" onclick="selectMethod(this)">💵 Cash</button>
+          <button class="method-btn" onclick="selectMethod(this)">📱 Digital Wallet</button>
+          <button class="method-btn" onclick="selectMethod(this)">🏛️ Bank Transfer</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Location</label>
+          <input class="form-input" type="text" placeholder="e.g. New York, NY"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-input" rows="3" placeholder="Add notes…" style="resize:none"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tags</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="padding:5px 12px;border-radius:20px;border:1px solid var(--primary);color:var(--primary);font-size:12px;cursor:pointer;font-weight:500">🏢 Work</span>
+            <span style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);color:var(--textSub);font-size:12px;cursor:pointer">🌐 Online</span>
+            <span style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);color:var(--textSub);font-size:12px;cursor:pointer">✈️ Travel</span>
+            <span style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);color:var(--textSub);font-size:12px;cursor:pointer">❤️ Personal</span>
+            <span style="padding:5px 12px;border-radius:20px;border:1px dashed var(--border);color:var(--textMuted);font-size:12px;cursor:pointer">+ New tag</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Receipt</label>
+          <button onclick="alert('Camera opens → OCR extracts amount, merchant, date automatically')" style="width:100%;padding:14px;border:2px dashed var(--border);border-radius:14px;background:none;color:var(--textSub);font-family:inherit;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+            📸 Scan / Upload Receipt (OCR)
+          </button>
+        </div>
+      </div>
+      <!-- Split tab -->
+      <div id="modalTab-split" style="padding:0 20px;display:none;text-align:center;padding-top:32px;padding-bottom:32px">
+        <div style="font-size:48px;margin-bottom:12px;animation:float 3s ease infinite">👥</div>
+        <h3 style="margin-bottom:8px">Split Expense</h3>
+        <p style="font-size:13px;color:var(--textSub);margin-bottom:20px">Add shared wallet members to split this expense and track per-user balances.</p>
+        <button onclick="alert('Invite wallet members via /api/v1/wallets/{id}/invite')" style="padding:12px 24px;background:var(--primaryLight);color:var(--primary);border:1.5px solid var(--primary);border-radius:12px;font-family:inherit;font-weight:600;cursor:pointer">Add Wallet Members</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS MODAL -->
+  <div class="modal-backdrop" id="notifModal" onclick="handleBackdropClick(event,'notifModal')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <span class="modal-title">Notifications</span>
+        <button onclick="toggleModal('notifModal')" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer">Mark all read</button>
+      </div>
+      <div style="padding:0 16px 24px">
+        <div class="notif-item"><span style="font-size:24px">⚠️</span><div style="flex:1"><div style="font-weight:600;font-size:14px">Budget Alert</div><div style="font-size:12px;color:var(--textSub);margin-top:2px">You've used 80% of your Food &amp; Dining budget ($400/$500)</div><div style="font-size:11px;color:var(--textMuted);margin-top:6px">2 min ago</div></div></div>
+        <div class="notif-item"><span style="font-size:24px">🔁</span><div style="flex:1"><div style="font-weight:600;font-size:14px">Recurring Due</div><div style="font-size:12px;color:var(--textSub);margin-top:2px">Netflix $15.99 subscription is due today. Tap to log.</div><div style="font-size:11px;color:var(--textMuted);margin-top:6px">1 hour ago</div></div></div>
+        <div class="notif-item" style="opacity:0.6"><span style="font-size:24px">📊</span><div style="flex:1"><div style="font-weight:600;font-size:14px">Weekly Summary</div><div style="font-size:12px;color:var(--textSub);margin-top:2px">You logged 8 expenses totalling $334.52 this week.</div><div style="font-size:11px;color:var(--textMuted);margin-top:6px">2 days ago</div></div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end phone-shell -->
+
+<script>
+// ─── Data ──────────────────────────────────────────────────────────────────────
+const expenses = [
+  {id:'1',merchant:'Starbucks',amount:5.40,cat:'Food & Dining',date:'Today, 8:20 AM',method:'credit_card',notes:'Morning coffee',tags:['work'],recurring:false},
+  {id:'2',merchant:'Uber',amount:18.90,cat:'Transportation',date:'Yesterday, 6:45 PM',method:'digital_wallet',notes:'Airport ride',tags:['travel'],recurring:false},
+  {id:'3',merchant:'Whole Foods',amount:127.45,cat:'Groceries',date:'Mon, Jun 10',method:'debit_card',notes:'Weekly shop',tags:[],recurring:false},
+  {id:'4',merchant:'Netflix',amount:15.99,cat:'Subscriptions',date:'Mon, Jun 10',method:'credit_card',notes:'Monthly',tags:['recurring'],recurring:true},
+  {id:'5',merchant:'Planet Fitness',amount:24.99,cat:'Fitness',date:'Sun, Jun 9',method:'credit_card',notes:'Gym',tags:['health','recurring'],recurring:true},
+  {id:'6',merchant:'Amazon',amount:89.99,cat:'Shopping',date:'Sat, Jun 8',method:'credit_card',notes:'Headphones',tags:['online'],recurring:false},
+  {id:'7',merchant:'CVS Pharmacy',amount:34.20,cat:'Healthcare',date:'Fri, Jun 7',method:'debit_card',notes:'Prescriptions',tags:['health'],recurring:false},
+  {id:'8',merchant:'Chipotle',amount:12.75,cat:'Food & Dining',date:'Thu, Jun 6',method:'cash',notes:'Lunch',tags:[],recurring:false},
+];
+const budgets = [
+  {name:'Monthly Food',amount:500,spent:143.60,cat:'Food & Dining'},
+  {name:'Shopping',amount:200,spent:89.99,cat:'Shopping'},
+  {name:'Transport',amount:150,spent:18.90,cat:'Transportation'},
+  {name:'Healthcare',amount:100,spent:34.20,cat:'Healthcare'},
+];
+const recurring = [
+  {name:'Netflix',amount:15.99,currency:'USD',due:'Jun 15'},
+  {name:'Planet Fitness',amount:24.99,currency:'USD',due:'Jun 20'},
+  {name:'Spotify',amount:9.99,currency:'USD',due:'Jun 25'},
+];
+const weeklyData = [34.20,0,89.99,24.99,127.45,18.90,5.40];
+const weekDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const catColors = {
+  'Food & Dining':'#F59E0B','Groceries':'#10B981','Transportation':'#3B82F6',
+  'Shopping':'#8B5CF6','Healthcare':'#EF4444','Entertainment':'#EC4899',
+  'Utilities':'#6366F1','Fitness':'#84CC16','Travel':'#F97316',
+  'Subscriptions':'#A78BFA','Other':'#9CA3AF'
+};
+const catIcons = {
+  'Food & Dining':'🍽️','Groceries':'🛒','Transportation':'🚗','Shopping':'🛍️',
+  'Healthcare':'🏥','Entertainment':'🎬','Utilities':'⚡','Fitness':'💪',
+  'Travel':'✈️','Subscriptions':'📱','Other':'📌'
+};
+const keywordMap = {
+  'Food & Dining':['starbucks','restaurant','cafe','pizza','burger','mcdonald','subway','chipotle','food','dining'],
+  'Groceries':['walmart','target','costco','whole foods','trader','kroger','safeway','aldi','grocery','market'],
+  'Transportation':['uber','lyft','taxi','bus','metro','train','flight','shell','bp','exxon','parking','gas'],
+  'Shopping':['amazon','ebay','mall','store','shop','clothing','h&m','zara','nike','best buy'],
+  'Healthcare':['pharmacy','cvs','walgreens','hospital','clinic','doctor','medical','dental'],
+  'Entertainment':['netflix','spotify','hulu','disney','cinema','movie','game','steam'],
+  'Fitness':['gym','fitness','yoga','planet fitness','crossfit','peloton'],
+  'Subscriptions':['subscription','membership','monthly','annual','premium'],
+};
+
+let activeFilter = '';
+
+// ─── Init ──────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  renderDashboard();
+  renderExpenses();
+  renderBudgetsPage();
+  renderAnalytics();
+  buildCategoryChips();
+  document.getElementById('expDate').value = new Date().toISOString().slice(0,16);
+};
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+const tabTitles = {dashboard:'💸 SpendWise',expenses:'Expenses',budgets:'Budgets',analytics:'Insights',settings:'Settings'};
+function switchTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.remove('active');
+    t.querySelector('.nav-label').style.color = '';
+  });
+  document.getElementById('screen-'+tab).classList.add('active');
+  const navBtn = document.getElementById('tab-'+tab);
+  navBtn.classList.add('active');
+  navBtn.querySelector('.nav-label').style.color = 'var(--primary)';
+  document.getElementById('headerTitle').textContent = tabTitles[tab];
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+function toggleModal(id) {
+  const m = document.getElementById(id);
+  m.classList.toggle('open');
+}
+function handleBackdropClick(e, id) {
+  if (e.target === document.getElementById(id)) toggleModal(id);
+}
+function showModalTab(tab, btn) {
+  document.querySelectorAll('[id^="modalTab-"]').forEach(t => t.style.display='none');
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  document.getElementById('modalTab-'+tab).style.display='block';
+  btn.classList.add('active');
+}
+
+// ─── Render Dashboard ─────────────────────────────────────────────────────────
+function renderDashboard() {
+  // Budget bars
+  const bl = document.getElementById('budgetList');
+  bl.innerHTML = budgets.slice(0,3).map(b => {
+    const pct = Math.min(100,(b.spent/b.amount)*100);
+    const col = pct>90?'var(--danger)':pct>70?'var(--warning)':'var(--success)';
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:500">${b.name}</span>
+        <span style="font-size:12px;color:var(--textSub)">$${b.spent.toFixed(0)} / $${b.amount}</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+  // Recent
+  document.getElementById('recentList').innerHTML = expenses.slice(0,4).map(expRow).join('');
+}
+
+// ─── Render Expenses ──────────────────────────────────────────────────────────
+function renderExpenses() {
+  const q = (document.getElementById('expSearch')?.value||'').toLowerCase();
+  const list = expenses.filter(e => {
+    const matchQ = !q || e.merchant.toLowerCase().includes(q) || (e.notes||'').toLowerCase().includes(q);
+    const matchCat = !activeFilter || e.cat === activeFilter;
+    return matchQ && matchCat;
+  });
+  document.getElementById('expenseList').innerHTML = list.length
+    ? list.map(e => expRow(e, true)).join('')
+    : '<div style="text-align:center;padding:48px 0;color:var(--textSub)"><div style="font-size:48px;margin-bottom:12px">🔍</div><div>No expenses found</div></div>';
+}
+function expRow(e, showActions=false) {
+  const col = catColors[e.cat]||'#9CA3AF';
+  const icon = catIcons[e.cat]||'📌';
+  const recBadge = e.recurring ? `<span class="rec-chip">🔁 Recurring</span>` : '';
+  return `<div class="exp-row">
+    <div class="cat-bubble" style="background:${col}22">${icon}</div>
+    <div class="exp-info">
+      <div class="exp-name">${e.merchant}</div>
+      <div class="exp-meta">${e.cat} · ${e.date} ${recBadge}</div>
+    </div>
+    <div class="exp-amount">-$${e.amount.toFixed(2)}</div>
+    ${showActions ? `<div style="display:flex;gap:6px;margin-left:4px">
+      <div onclick="editExpense('${e.id}')" style="padding:6px;cursor:pointer;color:var(--textSub)">✏️</div>
+      <div onclick="deleteExpense('${e.id}')" style="padding:6px;cursor:pointer;color:var(--danger)">🗑️</div>
+    </div>` : ''}
+  </div>`;
+}
+function filterCat(cat) {
+  activeFilter = cat;
+  document.querySelectorAll('#catFilter .cat-chip').forEach(c => {
+    c.classList.toggle('selected', c.dataset.cat === cat);
+  });
+  renderExpenses();
+}
+function editExpense(id) { toggleModal('expenseModal'); }
+function deleteExpense(id) { if(confirm('Delete this expense?')) { expenses.splice(expenses.findIndex(e=>e.id===id),1); renderExpenses(); renderDashboard(); } }
+
+// ─── Budgets page ─────────────────────────────────────────────────────────────
+function renderBudgetsPage() {
+  document.getElementById('budgetsFullList').innerHTML = budgets.map(b => {
+    const pct = Math.min(100,(b.spent/b.amount)*100);
+    const col = pct>90?'var(--danger)':pct>70?'var(--warning)':'var(--success)';
+    const rem = b.amount - b.spent;
+    return `<div class="budget-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+        <div><div style="font-weight:600;font-size:15px">${b.name}</div><div style="font-size:12px;color:var(--textSub)">${catIcons[b.cat]||'📌'} ${b.cat}</div></div>
+        <div style="text-align:right"><div style="font-weight:700;font-size:18px;color:${col}">${pct.toFixed(0)}%</div><div style="font-size:11px;color:var(--textSub)">used</div></div>
+      </div>
+      <div class="prog-bar" style="height:8px;margin-bottom:10px"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px">
+        <span style="color:var(--textSub)">Spent: <strong style="color:var(--text)">$${b.spent.toFixed(2)}</strong></span>
+        <span style="color:var(--textSub)">Left: <strong style="color:${rem>=0?'var(--success)':'var(--danger)'}">$${Math.abs(rem).toFixed(2)}${rem<0?' over':''}</strong></span>
+        <span style="color:var(--textSub)">Limit: <strong style="color:var(--text)">$${b.amount}</strong></span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('recurringList').innerHTML = recurring.map(r =>
+    `<div class="exp-row" style="margin-bottom:8px">
+      <div class="cat-bubble" style="background:rgba(124,109,250,0.15)">🔁</div>
+      <div class="exp-info"><div class="exp-name">${r.name}</div><div class="exp-meta">Due ${r.due}</div></div>
+      <div style="font-weight:600;color:var(--primary)">$${r.amount}</div>
+    </div>`
+  ).join('');
+}
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+function renderAnalytics() {
+  // Bar chart
+  const max = Math.max(...weeklyData, 1);
+  document.getElementById('barChart').innerHTML = weeklyData.map((v, i) => `
+    <div class="bar-col">
+      ${v > 0 ? `<div style="font-size:9px;color:var(--primary);font-weight:600;margin-bottom:2px">$${v}</div>` : ''}
+      <div class="bar" style="height:${Math.max(v/max*64, v>0?4:0)}px;background:${i===6?'var(--primary)':'rgba(124,109,250,0.4)'}"></div>
+      <span class="bar-lbl">${weekDays[i]}</span>
+    </div>`).join('');
+
+  // Donut
+  const bycat = {};
+  expenses.forEach(e => { bycat[e.cat] = (bycat[e.cat]||0)+e.amount; });
+  const total = Object.values(bycat).reduce((s,v)=>s+v,0);
+  const sorted = Object.entries(bycat).sort((a,b)=>b[1]-a[1]);
+  let offset = 0;
+  const paths = sorted.slice(0,6).map(([cat,val])=>{
+    const pct = (val/total)*100;
+    const color = catColors[cat]||'#9CA3AF';
+    const path = `<circle r="15.9155" cx="18" cy="18" fill="none" stroke="${color}" stroke-width="3.5" stroke-dasharray="${pct} ${100-pct}" stroke-dashoffset="${-offset}"/>`;
+    offset += pct;
+    return path;
+  });
+  document.getElementById('donutSvg').innerHTML = paths.join('');
+  document.getElementById('catLegend').innerHTML = sorted.slice(0,5).map(([cat,val])=>`
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:10px;height:10px;border-radius:3px;background:${catColors[cat]||'#9CA3AF'};flex-shrink:0"></div>
+      <span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">${cat}</span>
+      <span style="font-size:11px;color:var(--textSub);font-weight:600">${((val/total)*100).toFixed(0)}%</span>
+    </div>`).join('');
+
+  // Merchants
+  const merchants = {};
+  expenses.forEach(e => { merchants[e.merchant]=(merchants[e.merchant]||0)+e.amount; });
+  document.getElementById('merchantList').innerHTML = Object.entries(merchants).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([m,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:14px">${m}</span><span style="font-size:14px;font-weight:600">$${v.toFixed(2)}</span>
+    </div>`).join('');
+}
+function setAnalyticsPeriod(m, btn) {
+  document.querySelectorAll('#screen-analytics button[onclick^="setAnalyticsPeriod"]').forEach(b => {
+    b.style.background='none'; b.style.borderColor='var(--border)'; b.style.color='var(--textSub)'; b.style.fontWeight='400';
+  });
+  btn.style.background='var(--primaryLight)'; btn.style.borderColor='var(--primary)'; btn.style.color='var(--primary)'; btn.style.fontWeight='600';
+}
+
+// ─── Category chips (modal) ───────────────────────────────────────────────────
+function buildCategoryChips() {
+  const cats = Object.keys(catColors);
+  document.getElementById('categoryCatalog').innerHTML = cats.map(cat => `
+    <button class="cat-chip" onclick="selectCat(this,'${cat}')" style="padding:7px 12px">
+      ${catIcons[cat]||'📌'} ${cat}
+    </button>`).join('');
+}
+let selectedCat = '';
+function selectCat(btn, cat) {
+  document.querySelectorAll('#categoryCatalog .cat-chip').forEach(c => {
+    c.classList.remove('selected');
+    c.style.borderColor=''; c.style.background=''; c.style.color='';
+  });
+  btn.classList.add('selected');
+  const col = catColors[cat]||'var(--primary)';
+  btn.style.borderColor = col; btn.style.background = col+'22'; btn.style.color = col;
+  selectedCat = cat;
+}
+
+// ─── Edge ML ──────────────────────────────────────────────────────────────────
+let mlTimeout;
+function runEdgeML() {
+  clearTimeout(mlTimeout);
+  const text = document.getElementById('merchantInput').value.toLowerCase();
+  if (text.length < 3) { document.getElementById('mlHint').style.display='none'; return; }
+  mlTimeout = setTimeout(() => {
+    for (const [cat, kws] of Object.entries(keywordMap)) {
+      const match = kws.find(kw => text.includes(kw));
+      if (match) {
+        const conf = Math.min(95, 60 + match.length * 3);
+        document.getElementById('mlText').textContent = `${catIcons[cat]||'📌'} ${cat} (${conf}% confident)`;
+        document.getElementById('mlHint').style.display='flex';
+        window._mlCat = cat;
+        return;
+      }
+    }
+    document.getElementById('mlHint').style.display='none';
+  }, 300);
+}
+function acceptML() {
+  if (window._mlCat) {
+    const chips = document.querySelectorAll('#categoryCatalog .cat-chip');
+    chips.forEach(c => { if (c.textContent.trim().includes(window._mlCat)) selectCat(c, window._mlCat); });
+    document.getElementById('mlHint').style.display='none';
+  }
+}
+
+// ─── Amount change → enable Save btn ─────────────────────────────────────────
+function onAmountChange() {
+  const v = parseFloat(document.getElementById('amtInput').value);
+  document.getElementById('saveBtnBasic').disabled = !(v > 0);
+  document.getElementById('saveBtnBasic').style.opacity = v > 0 ? '1' : '0.4';
+}
+
+// ─── Save expense ─────────────────────────────────────────────────────────────
+function saveExpense() {
+  const amt = parseFloat(document.getElementById('amtInput').value);
+  const merchant = document.getElementById('merchantInput').value || 'Expense';
+  const cat = selectedCat || (window._mlCat) || 'Other';
+  const newExp = {
+    id: Date.now().toString(), merchant, amount: amt,
+    cat, date:'Just now', method:'credit_card', notes:'', tags:[], recurring:false,
+  };
+  expenses.unshift(newExp);
+  renderDashboard(); renderExpenses(); renderBudgetsPage(); renderAnalytics();
+  toggleModal('expenseModal');
+  document.getElementById('amtInput').value='';
+  document.getElementById('merchantInput').value='';
+  document.getElementById('mlHint').style.display='none';
+  document.getElementById('saveBtnBasic').disabled=true;
+  selectedCat=''; window._mlCat=null;
+  document.querySelectorAll('#categoryCatalog .cat-chip').forEach(c => {
+    c.classList.remove('selected'); c.style.borderColor=''; c.style.background=''; c.style.color='';
+  });
+  // Show hero total update
+  const total = expenses.reduce((s,e)=>s+e.amount,0);
+  document.getElementById('heroTotal').textContent = total.toFixed(2);
+}
+
+// ─── Method select ────────────────────────────────────────────────────────────
+function selectMethod(btn) {
+  document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function setTheme(theme, btn) {
+  if (theme === 'light') {
+    document.documentElement.style.setProperty('--bg','#F0F0FA');
+    document.documentElement.style.setProperty('--surface','#FFFFFF');
+    document.documentElement.style.setProperty('--surfaceAlt','#F4F4FF');
+    document.documentElement.style.setProperty('--border','#E0E0F0');
+    document.documentElement.style.setProperty('--text','#1A1A3E');
+    document.documentElement.style.setProperty('--textSub','#7070A0');
+    document.documentElement.style.setProperty('--textMuted','#B0B0D0');
+    document.body.style.background = '#E0E0F0';
+  } else {
+    document.documentElement.style.setProperty('--bg','#0A0A18');
+    document.documentElement.style.setProperty('--surface','#13132A');
+    document.documentElement.style.setProperty('--surfaceAlt','#1A1A35');
+    document.documentElement.style.setProperty('--border','#252548');
+    document.documentElement.style.setProperty('--text','#EEEEFF');
+    document.documentElement.style.setProperty('--textSub','#8080AA');
+    document.documentElement.style.setProperty('--textMuted','#4A4A72');
+    document.body.style.background = '#060612';
+  }
+}
+function selectColor(dot, primary, light) {
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+  dot.classList.add('selected');
+  document.documentElement.style.setProperty('--primary', primary);
+  document.documentElement.style.setProperty('--primaryLight', light);
+  document.documentElement.style.setProperty('--primaryGlow', primary+'50');
+}
+function setFontSize(scale, btn) {
+  document.querySelector('.phone-shell').style.fontSize = scale + 'rem';
+}
+function toggleSwitch(btn) {
+  btn.classList.toggle('on'); btn.classList.toggle('off');
+}
+</script>
+</body>
+</html>
