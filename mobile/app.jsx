@@ -289,28 +289,8 @@ export default function SpendWiseApp() {
     ]});
   }, []);
 
-  // Demo data
-  useEffect(() => {
-    const sampleExpenses = [
-      { id: '1', merchant_name: 'Starbucks', amount: 5.40, currency: 'USD', base_amount: 5.40, category: 'Food & Dining', expense_date: new Date(Date.now() - 86400000).toISOString(), payment_method: 'credit_card', notes: 'Morning coffee', location_name: 'Downtown', tags: ['work'] },
-      { id: '2', merchant_name: 'Uber', amount: 18.90, currency: 'USD', base_amount: 18.90, category: 'Transportation', expense_date: new Date(Date.now() - 172800000).toISOString(), payment_method: 'digital_wallet', notes: 'Airport ride', location_name: 'Airport', tags: ['travel'] },
-      { id: '3', merchant_name: 'Whole Foods', amount: 127.45, currency: 'USD', base_amount: 127.45, category: 'Groceries', expense_date: new Date(Date.now() - 259200000).toISOString(), payment_method: 'debit_card', notes: 'Weekly shopping', location_name: 'Times Square', tags: [] },
-      { id: '4', merchant_name: 'Netflix', amount: 15.99, currency: 'USD', base_amount: 15.99, category: 'Subscriptions', expense_date: new Date(Date.now() - 345600000).toISOString(), payment_method: 'credit_card', notes: 'Monthly subscription', tags: ['recurring'] },
-      { id: '5', merchant_name: 'Planet Fitness', amount: 24.99, currency: 'USD', base_amount: 24.99, category: 'Fitness', expense_date: new Date(Date.now() - 432000000).toISOString(), payment_method: 'credit_card', notes: 'Gym membership', tags: ['health', 'recurring'] },
-      { id: '6', merchant_name: 'Amazon', amount: 89.99, currency: 'USD', base_amount: 89.99, category: 'Shopping', expense_date: new Date(Date.now() - 518400000).toISOString(), payment_method: 'credit_card', notes: 'Headphones', tags: ['online'] },
-      { id: '7', merchant_name: 'CVS Pharmacy', amount: 34.20, currency: 'USD', base_amount: 34.20, category: 'Healthcare', expense_date: new Date(Date.now() - 604800000).toISOString(), payment_method: 'debit_card', notes: 'Prescriptions', tags: ['health'] },
-      { id: '8', merchant_name: 'Chipotle', amount: 12.75, currency: 'USD', base_amount: 12.75, category: 'Food & Dining', expense_date: new Date(Date.now() - 691200000).toISOString(), payment_method: 'cash', notes: 'Lunch with colleague', tags: [] },
-    ];
-    const sampleBudgets = [
-      { id: 'b1', name: 'Monthly Food', amount: 500, currency: 'USD', spent: 143.60, category: 'Food & Dining', period_start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString() },
-      { id: 'b2', name: 'Shopping Budget', amount: 200, currency: 'USD', spent: 89.99, category: 'Shopping', period_start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString() },
-      { id: 'b3', name: 'Transport', amount: 150, currency: 'USD', spent: 18.90, category: 'Transportation', period_start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString() },
-    ];
-    dispatch({ type: 'SET_EXPENSES', payload: sampleExpenses });
-    dispatch({ type: 'SET_BUDGETS', payload: sampleBudgets });
-    // Demo user — isDemo flag controls "Synced" display
-    dispatch({ type: 'SET_USER', payload: { id: 'demo', display_name: 'Alex Morgan', email: 'alex@example.com', base_currency: 'USD', isDemo: true }, token: 'demo' });
-  }, []);
+  // App starts completely empty - no demo data
+  // User must sign in or add expenses manually
 
   const theme = { ...THEMES[state.theme], ...COLOR_SCHEMES[state.colorScheme] };
   const fontSize = { sm: 0.875, md: 1, lg: 1.125, xl: 1.25 }[state.fontSize] || 1;
@@ -1330,31 +1310,66 @@ function SettingsScreen() {
     setEditingName(false);
   };
 
-  const exportCSV = () => {
-    const headers = ['Date', 'Merchant', 'Category', 'Amount', 'Currency', 'Payment Method', 'Notes', 'Tags'];
-    const rows = state.expenses.map(e => [
-      new Date(e.expense_date).toLocaleDateString(),
-      e.merchant_name || '',
-      e.category || '',
-      e.amount,
-      e.currency || 'USD',
-      e.payment_method || '',
-      (e.notes || '').replace(/,/g, ';'),
-      (e.tags || []).join(';'),
-    ]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `spendwise-export-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
-    URL.revokeObjectURL(url);
-  };
+  const exportPDF = () => {
+    const now = new Date();
+    const currency = state.user?.base_currency || 'USD';
+    const total = state.expenses.reduce((s, e) => s + (e.amount || 0), 0);
 
-  const exportJSON = () => {
-    const data = { expenses: state.expenses, budgets: state.budgets, exported_at: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `spendwise-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click();
-    URL.revokeObjectURL(url);
+    const rows = state.expenses.map(e => `
+      <tr>
+        <td>${new Date(e.expense_date).toLocaleDateString()}</td>
+        <td>${e.merchant_name || '-'}</td>
+        <td>${e.category || '-'}</td>
+        <td>${e.payment_method?.replace(/_/g, ' ') || '-'}</td>
+        <td>${e.notes || '-'}</td>
+        <td style="text-align:right;font-weight:600;color:#EF4444">${formatCurrency(e.amount, e.currency || currency)}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8"/>
+        <title>SpendWise Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 32px; color: #1a1a2e; }
+          h1 { color: #4F46E5; margin-bottom: 4px; }
+          .meta { color: #6c757d; font-size: 13px; margin-bottom: 24px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          th { background: #4F46E5; color: white; padding: 10px 12px; text-align: left; }
+          td { padding: 9px 12px; border-bottom: 1px solid #e9ecef; }
+          tr:nth-child(even) { background: #f8f9fa; }
+          .total { margin-top: 20px; text-align: right; font-size: 16px; font-weight: 700; color: #4F46E5; }
+          .footer { margin-top: 32px; font-size: 11px; color: #9ca3af; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <h1>💸 SpendWise — Expense Report</h1>
+        <div class="meta">
+          Generated on ${now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
+          &nbsp;·&nbsp; ${state.user?.display_name || 'User'} (${state.user?.email || ''})
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Merchant</th><th>Category</th>
+              <th>Payment</th><th>Notes</th><th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="total">Total: ${formatCurrency(total, currency)} across ${state.expenses.length} expenses</div>
+        <div class="footer">SpendWise · GDPR Compliant · AES-256 Encrypted · No banking credentials stored</div>
+      </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 500);
   };
 
   return (
@@ -1467,16 +1482,10 @@ function SettingsScreen() {
         </SettingsRow>
       </SettingsSection>
 
-      {/* FIX: Working export */}
       <SettingsSection title="DATA" theme={theme}>
-        <SettingsRow label="Export CSV" theme={theme}>
-          <button onClick={exportCSV} style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '0.85rem', fontWeight: 600 }}>
-            ⬇️ Export
-          </button>
-        </SettingsRow>
-        <SettingsRow label="Export JSON Backup" theme={theme}>
-          <button onClick={exportJSON} style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '0.85rem', fontWeight: 600 }}>
-            ⬇️ Export
+        <SettingsRow label="Export as PDF" theme={theme}>
+          <button onClick={exportPDF} style={{ background: theme.primary, color: 'white', border: 'none', borderRadius: 10, padding: '7px 16px', fontSize: '0.85rem', fontWeight: 600 }}>
+            ⬇️ Download PDF
           </button>
         </SettingsRow>
         <SettingsRow label="Total Expenses" value={state.expenses.length} theme={theme} />
@@ -1636,11 +1645,28 @@ function SignInModal() {
       const token = data.access_token;
       localStorage.setItem('sw_access_token', token);
 
-      // Get user profile
-      const profileRes = await fetch(`${SyncEngine.BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
-      const profile = await profileRes.json();
+      // Get user profile — fall back gracefully if endpoint fails
+      let profile = {};
+      try {
+        const profileRes = await fetch(`${SyncEngine.BASE_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (profileRes.ok) {
+          profile = await profileRes.json();
+        }
+      } catch (_) {}
 
-      dispatch({ type: 'SET_USER', payload: { ...profile, isDemo: false }, token });
+      // Build user from profile or extract from email/token
+      const emailName = form.email.split('@')[0];
+      const displayName = profile.display_name || profile.name || emailName;
+      dispatch({ type: 'SET_USER', payload: {
+        id: profile.id || crypto.randomUUID(),
+        display_name: displayName,
+        email: profile.email || form.email,
+        base_currency: profile.base_currency || 'USD',
+        isDemo: false,
+        ...profile,
+      }, token });
       dispatch({ type: 'CLOSE_MODAL' });
     } catch (e) {
       setError(e.message);
